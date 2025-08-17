@@ -3,21 +3,31 @@ from datetime import datetime
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
+from sqlalchemy import StaticPool, create_engine, event
 from sqlalchemy.orm import Session
 
 from fastapi_zero.app import app
-from fastapi_zero.database.database import table_registry
+from fastapi_zero.database.database import get_session, table_registry
 
 
 @pytest.fixture
-def client():
-    return TestClient(app)
+def client(session):
+    def get_session_override():
+        return session
+
+    with TestClient(app) as client:
+        app.dependency_overrides[get_session] = get_session_override
+        yield client
+
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
 def session():
-    engine = create_engine('sqlite:///:memory:')
+    engine = create_engine(
+        'sqlite:///:memory:', connect_args={'check_same_thread': False},
+        poolclass=StaticPool
+    )
     table_registry.metadata.create_all(engine)
 
     with Session(engine) as session:
