@@ -1,19 +1,25 @@
 from http import HTTPStatus
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
-from ..database.database import database
-from ..schemas.user_schema import UserDB, UserList, UserPublic, UserSchema
+from fastapi_zero.controllers.user_controller import (
+    create_user as create_user_controller,
+)
+from fastapi_zero.database.database import database, get_session
+from fastapi_zero.schemas.user_schema import (
+    UserDB,
+    UserList,
+    UserPublic,
+    UserSchema,
+)
 
 router = APIRouter(prefix='/users', tags=['Users'])
 
 
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=UserPublic)
-def create_user(user: UserSchema):
-    user_with_id = UserDB(**user.model_dump(), id=len(database) + 1)
-
-    database.append(user_with_id)
-    return user_with_id
+def create_user(user: UserSchema, session: Session = Depends(get_session)):
+    return create_user_controller(user, session)
 
 
 @router.get('/', status_code=HTTPStatus.OK, response_model=UserList)
