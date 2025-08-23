@@ -35,3 +35,9 @@ def create_user(user: UserSchema, session: Session):
     session.refresh(db_user)
 
     return db_user
+
+
+def get_users(session: Session, limit: int = 10, offset: int = 0):
+    pagination = select(User).limit(limit).offset(offset)
+    users = session.scalars(pagination)
+    return {'users': users}

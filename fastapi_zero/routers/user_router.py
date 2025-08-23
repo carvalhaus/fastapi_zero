@@ -1,10 +1,13 @@
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from fastapi_zero.controllers.user_controller import (
     create_user as create_user_controller,
+)
+from fastapi_zero.controllers.user_controller import (
+    get_users as get_users_controller,
 )
 from fastapi_zero.database.database import database, get_session
 from fastapi_zero.schemas.user_schema import (
@@ -23,8 +26,12 @@ def create_user(user: UserSchema, session: Session = Depends(get_session)):
 
 
 @router.get('/', status_code=HTTPStatus.OK, response_model=UserList)
-def get_users():
-    return {'users': database}
+def get_users(
+    session: Session = Depends(get_session),
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
+    return get_users_controller(session, limit, offset)
 
 
 @router.put(
