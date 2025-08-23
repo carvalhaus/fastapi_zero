@@ -1,17 +1,26 @@
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from fastapi_zero.controllers.user_controller import (
     create_user as create_user_controller,
 )
 from fastapi_zero.controllers.user_controller import (
+    delete_user as delete_user_controller,
+)
+from fastapi_zero.controllers.user_controller import (
+    get_user as get_user_controller,
+)
+from fastapi_zero.controllers.user_controller import (
     get_users as get_users_controller,
 )
-from fastapi_zero.database.database import database, get_session
+from fastapi_zero.controllers.user_controller import (
+    update_user as update_user_controller,
+)
+from fastapi_zero.database.database import get_session
+from fastapi_zero.schemas.message_schema import Message
 from fastapi_zero.schemas.user_schema import (
-    UserDB,
     UserList,
     UserPublic,
     UserSchema,
@@ -37,38 +46,21 @@ def get_users(
 @router.put(
     '/{user_id}/', status_code=HTTPStatus.OK, response_model=UserPublic
 )
-def update_user(user_id: int, user: UserSchema):
-    user_with_id = UserDB(**user.model_dump(), id=user_id)
-
-    if user_id < 1 or user_id > len(database):
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='Usuário não encontrado!'
-        )
-
-    database[user_id - 1] = user_with_id
-
-    return user_with_id
+def update_user(
+    user_id: int, user: UserSchema, session: Session = Depends(get_session)
+):
+    return update_user_controller(user_id, user, session)
 
 
 @router.get(
     '/{user_id}/', status_code=HTTPStatus.OK, response_model=UserPublic
 )
-def get_user(user_id: int):
-    if user_id < 1 or user_id > len(database):
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='Usuário não encontrado!'
-        )
-
-    return database[user_id - 1]
+def get_user(user_id: int, session: Session = Depends(get_session)):
+    return get_user_controller(user_id, session)
 
 
 @router.delete(
-    '/{user_id}/', status_code=HTTPStatus.OK, response_model=UserPublic
+    '/{user_id}/', status_code=HTTPStatus.OK, response_model=Message
 )
-def delete_user(user_id: int):
-    if user_id < 1 or user_id > len(database):
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='Usuário não encontrado!'
-        )
-
-    return database.pop(user_id - 1)
+def delete_user(user_id: int, session: Session = Depends(get_session)):
+    return delete_user_controller(user_id, session)

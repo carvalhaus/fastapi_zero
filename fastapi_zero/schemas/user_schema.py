@@ -14,9 +14,5 @@ class UserSchema(BaseModel):
     password: str
 
 
-class UserDB(UserSchema):
-    id: int
-
-
 class UserList(BaseModel):
     users: list[UserPublic]

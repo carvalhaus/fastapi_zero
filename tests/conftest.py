@@ -4,7 +4,7 @@ from datetime import datetime
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import StaticPool, create_engine, event
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker
 
 from fastapi_zero.app import app
 from fastapi_zero.database.database import get_session, table_registry
@@ -31,11 +31,18 @@ def session():
         poolclass=StaticPool,
     )
     table_registry.metadata.create_all(engine)
+    TestingSessionLocal = sessionmaker(
+        bind=engine, autoflush=False, autocommit=False
+    )
 
-    with Session(engine) as session:
-        yield session
-
-    table_registry.metadata.drop_all(engine)
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.rollback()
+        db.close()
+        table_registry.metadata.drop_all(engine)
+        engine.dispose()
 
 
 @contextmanager
