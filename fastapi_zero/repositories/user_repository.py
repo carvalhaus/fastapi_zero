@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from fastapi_zero.models.user_model import User
 from fastapi_zero.schemas.user_schema import UserSchema
+from fastapi_zero.security import get_password_hash
 
 
 def create_user(user: UserSchema, session: Session):
@@ -28,7 +29,9 @@ def create_user(user: UserSchema, session: Session):
             )
 
     db_user = User(
-        username=user.username, email=user.email, password=user.password
+        username=user.username,
+        email=user.email,
+        password=get_password_hash(user.password),
     )
 
     session.add(db_user)
@@ -55,7 +58,7 @@ def update_user(user_id: int, user: UserSchema, session: Session):
     try:
         db_user.username = user.username
         db_user.email = user.email
-        db_user.password = user.password
+        db_user.password = get_password_hash(user.password)
 
         session.commit()
         session.refresh(db_user)
