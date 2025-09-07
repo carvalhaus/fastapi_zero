@@ -1,8 +1,8 @@
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_zero.services.auth_service import login as login_service
 
 
-def login(form_data: OAuth2PasswordRequestForm, session: Session):
-    return login_service(form_data, session)
+async def login(form_data: OAuth2PasswordRequestForm, session: AsyncSession):
+    return await login_service(form_data, session)

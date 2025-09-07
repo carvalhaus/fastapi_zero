@@ -3,15 +3,15 @@ from http import HTTPStatus
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_zero.models.user_model import User
 from fastapi_zero.schemas.user_schema import UserSchema
 from fastapi_zero.security import get_password_hash
 
 
-def create_user(user: UserSchema, session: Session):
-    db_user: User | None = session.scalar(
+async def create_user(user: UserSchema, session: AsyncSession):
+    db_user: User | None = await session.scalar(
         select(User).where(
             (User.username == user.username) | (User.email == user.email)
         )
@@ -35,20 +35,20 @@ def create_user(user: UserSchema, session: Session):
     )
 
     session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
+    await session.commit()
+    await session.refresh(db_user)
 
     return db_user
 
 
-def get_users(session: Session, limit: int = 10, offset: int = 0):
+async def get_users(session: AsyncSession, limit: int = 10, offset: int = 0):
     pagination = select(User).limit(limit).offset(offset)
-    users = session.scalars(pagination)
+    users = await session.scalars(pagination)
     return {'users': users}
 
 
-def update_user(
-    user_id: int, user: UserSchema, session: Session, current_user
+async def update_user(
+    user_id: int, user: UserSchema, session: AsyncSession, current_user
 ):
     if current_user.id != user_id:
         raise HTTPException(
@@ -60,8 +60,8 @@ def update_user(
         current_user.email = user.email
         current_user.password = get_password_hash(user.password)
 
-        session.commit()
-        session.refresh(current_user)
+        await session.commit()
+        await session.refresh(current_user)
 
         return current_user
     except IntegrityError:
@@ -70,8 +70,8 @@ def update_user(
         )
 
 
-def get_user(user_id: int, session: Session):
-    db_user = session.scalar(select(User).where(User.id == user_id))
+async def get_user(user_id: int, session: AsyncSession):
+    db_user = await session.scalar(select(User).where(User.id == user_id))
 
     if not db_user:
         raise HTTPException(
@@ -81,13 +81,13 @@ def get_user(user_id: int, session: Session):
     return db_user
 
 
-def delete_user(user_id: int, session: Session, current_user):
+async def delete_user(user_id: int, session: AsyncSession, current_user):
     if current_user.id != user_id:
         raise HTTPException(
             status_code=HTTPStatus.FORBIDDEN, detail='Not enough permissions'
         )
 
-    session.delete(current_user)
-    session.commit()
+    await session.delete(current_user)
+    await session.commit()
 
     return {'message': 'User deleted'}

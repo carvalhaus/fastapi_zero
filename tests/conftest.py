@@ -2,9 +2,11 @@ from contextlib import contextmanager
 from datetime import datetime
 
 import pytest
+import pytest_asyncio
 from fastapi.testclient import TestClient
 from jwt import encode
-from sqlalchemy import StaticPool, create_engine, event
+from sqlalchemy import StaticPool, event
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from fastapi_zero.app import app
@@ -26,26 +28,36 @@ def client(session):
     app.dependency_overrides.clear()
 
 
-@pytest.fixture
-def session():
-    engine = create_engine(
-        'sqlite:///:memory:',
+@pytest_asyncio.fixture
+async def session():
+    engine = create_async_engine(
+        'sqlite+aiosqlite:///:memory:',
         connect_args={'check_same_thread': False},
         poolclass=StaticPool,
     )
-    table_registry.metadata.create_all(engine)
+
+    async with engine.begin() as conn:
+        await conn.run_sync(table_registry.metadata.create_all)
+
     TestingSessionLocal = sessionmaker(
-        bind=engine, autoflush=False, autocommit=False
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autoflush=False,
+        autocommit=False,
     )
 
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.rollback()
-        db.close()
-        table_registry.metadata.drop_all(engine)
-        engine.dispose()
+    async with TestingSessionLocal() as db:
+        try:
+            yield db
+        finally:
+            await db.rollback()
+            await db.close()
+
+    async with engine.begin() as conn:
+        await conn.run_sync(table_registry.metadata.drop_all)
+
+    await engine.dispose()
 
 
 @contextmanager
@@ -69,8 +81,8 @@ def mock_db_time():
     return _mock_db_time
 
 
-@pytest.fixture
-def user(session):
+@pytest_asyncio.fixture
+async def user(session):
     password = 'teste123'
     user = User(
         username='Teste',
@@ -78,8 +90,8 @@ def user(session):
         password=get_password_hash(password),
     )
     session.add(user)
-    session.commit()
-    session.refresh(user)
+    await session.commit()
+    await session.refresh(user)
 
     user.clean_password = password
 

@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_zero.schemas.user_schema import UserSchema
 from fastapi_zero.services.user_service import (
@@ -14,23 +14,23 @@ from fastapi_zero.services.user_service import (
 )
 
 
-def create_user(user: UserSchema, session: Session):
-    return create_user_service(user, session)
+async def create_user(user: UserSchema, session: AsyncSession):
+    return await create_user_service(user, session)
 
 
-def get_users(session: Session, limit: int, offset: int):
-    return get_users_service(session, limit, offset)
+async def get_users(session: AsyncSession, limit: int, offset: int):
+    return await get_users_service(session, limit, offset)
 
 
-def update_user(
-    user_id: int, user: UserSchema, session: Session, current_user
+async def update_user(
+    user_id: int, user: UserSchema, session: AsyncSession, current_user
 ):
-    return update_user_service(user_id, user, session, current_user)
+    return await update_user_service(user_id, user, session, current_user)
 
 
-def get_user(user_id: int, session: Session):
-    return get_user_service(user_id, session)
+async def get_user(user_id: int, session: AsyncSession):
+    return await get_user_service(user_id, session)
 
 
-def delete_user(user_id: int, session: Session, current_user):
-    return delete_user_service(user_id, session, current_user)
+async def delete_user(user_id: int, session: AsyncSession, current_user):
+    return await delete_user_service(user_id, session, current_user)

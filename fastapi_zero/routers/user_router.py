@@ -2,7 +2,7 @@ from http import HTTPStatus
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_zero.controllers.user_controller import (
     create_user as create_user_controller,
@@ -30,51 +30,51 @@ from fastapi_zero.security import get_current_user
 
 router = APIRouter(prefix='/users', tags=['Users'])
 
-SessionDep = Annotated[Session, Depends(get_session)]
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
 LimitDep = Annotated[int, Query(ge=1, le=100)]
 OffsetDep = Annotated[int, Query(ge=0)]
 
 
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=UserPublic)
-def create_user(user: UserSchema, session: SessionDep):
-    return create_user_controller(user, session)
+async def create_user(user: UserSchema, session: SessionDep):
+    return await create_user_controller(user, session)
 
 
 @router.get('/', status_code=HTTPStatus.OK, response_model=UserList)
-def get_users(
+async def get_users(
     session: SessionDep,
     limit: LimitDep = 10,
     offset: OffsetDep = 0,
     current_user=Depends(get_current_user),
 ):
-    return get_users_controller(session, limit, offset)
+    return await get_users_controller(session, limit, offset)
 
 
 @router.put(
     '/{user_id}/', status_code=HTTPStatus.OK, response_model=UserPublic
 )
-def update_user(
+async def update_user(
     user_id: int,
     user: UserSchema,
     session: SessionDep,
     current_user=Depends(get_current_user),
 ):
-    return update_user_controller(user_id, user, session, current_user)
+    return await update_user_controller(user_id, user, session, current_user)
 
 
 @router.get(
     '/{user_id}/', status_code=HTTPStatus.OK, response_model=UserPublic
 )
-def get_user(user_id: int, session: SessionDep):
-    return get_user_controller(user_id, session)
+async def get_user(user_id: int, session: SessionDep):
+    return await get_user_controller(user_id, session)
 
 
 @router.delete(
     '/{user_id}/', status_code=HTTPStatus.OK, response_model=Message
 )
-def delete_user(
+async def delete_user(
     user_id: int,
     session: SessionDep,
     current_user=Depends(get_current_user),
 ):
-    return delete_user_controller(user_id, session, current_user)
+    return await delete_user_controller(user_id, session, current_user)
