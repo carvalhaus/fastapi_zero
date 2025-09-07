@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from jwt import decode
 
 from fastapi_zero.security import create_access_token
@@ -15,3 +17,30 @@ def test_jwt():
 
     assert decoded['test'] == data['test']
     assert 'exp' in decoded
+
+
+def test_jwt_invalid_token(client):
+    response = client.delete(
+        '/users/1', headers={'Authorization': 'Bearer token-invalido'}
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Could not validate credentials'}
+
+
+def test_jwt_token_without_sub(client, token_without_sub):
+    response = client.delete(
+        '/users/1', headers={'Authorization': f'Bearer {token_without_sub}'}
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Could not validate credentials'}
+
+
+def test_jwt_user_not_found(client, token_invalid_email):
+    response = client.delete(
+        '/users/1', headers={'Authorization': f'Bearer {token_invalid_email}'}
+    )
+
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {'detail': 'Could not validate credentials'}

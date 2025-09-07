@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytest
 from fastapi.testclient import TestClient
+from jwt import encode
 from sqlalchemy import StaticPool, create_engine, event
 from sqlalchemy.orm import sessionmaker
 
@@ -10,6 +11,7 @@ from fastapi_zero.app import app
 from fastapi_zero.database.database import get_session, table_registry
 from fastapi_zero.models.user_model import User
 from fastapi_zero.security import get_password_hash
+from fastapi_zero.settings import Settings
 
 
 @pytest.fixture
@@ -82,3 +84,44 @@ def user(session):
     user.clean_password = password
 
     return user
+
+
+@pytest.fixture
+def another_user(session):
+    password = 'senha123'
+    u = User(
+        username='Alice',
+        email='alice@test.com',
+        password=get_password_hash(password),
+    )
+    session.add(u)
+    session.commit()
+    session.refresh(u)
+    return u
+
+
+@pytest.fixture
+def token(client, user):
+    response = client.post(
+        '/login',
+        data={'username': user.email, 'password': user.clean_password},
+    )
+
+    return response.json()['access_token']
+
+
+@pytest.fixture
+def token_without_sub():
+    token_data = {'foo': 'bar'}
+    return encode(
+        token_data, Settings().SECRET_KEY, algorithm=Settings().ALGORITHM
+    )
+
+
+@pytest.fixture
+def token_invalid_email():
+    token_data = {'sub': 'invalid@test.com'}
+
+    return encode(
+        token_data, Settings().SECRET_KEY, algorithm=Settings().ALGORITHM
+    )
