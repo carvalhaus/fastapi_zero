@@ -26,13 +26,15 @@ def get_users(session: Session, limit: int, offset: int):
     return get_users_repository(session, limit, offset)
 
 
-def update_user(user_id: int, user: UserSchema, session: Session):
-    return update_user_repository(user_id, user, session)
+def update_user(
+    user_id: int, user: UserSchema, session: Session, current_user
+):
+    return update_user_repository(user_id, user, session, current_user)
 
 
 def get_user(user_id: int, session: Session):
     return get_user_repository(user_id, session)
 
 
-def delete_user(user_id: int, session: Session):
-    return delete_user_repository(user_id, session)
+def delete_user(user_id: int, session: Session, current_user):
+    return delete_user_repository(user_id, session, current_user)

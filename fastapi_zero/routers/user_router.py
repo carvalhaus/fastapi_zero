@@ -25,6 +25,7 @@ from fastapi_zero.schemas.user_schema import (
     UserPublic,
     UserSchema,
 )
+from fastapi_zero.security import get_current_user
 
 router = APIRouter(prefix='/users', tags=['Users'])
 
@@ -39,6 +40,7 @@ def get_users(
     session: Session = Depends(get_session),
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    current_user=Depends(get_current_user),
 ):
     return get_users_controller(session, limit, offset)
 
@@ -47,9 +49,12 @@ def get_users(
     '/{user_id}/', status_code=HTTPStatus.OK, response_model=UserPublic
 )
 def update_user(
-    user_id: int, user: UserSchema, session: Session = Depends(get_session)
+    user_id: int,
+    user: UserSchema,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
 ):
-    return update_user_controller(user_id, user, session)
+    return update_user_controller(user_id, user, session, current_user)
 
 
 @router.get(
@@ -62,5 +67,9 @@ def get_user(user_id: int, session: Session = Depends(get_session)):
 @router.delete(
     '/{user_id}/', status_code=HTTPStatus.OK, response_model=Message
 )
-def delete_user(user_id: int, session: Session = Depends(get_session)):
-    return delete_user_controller(user_id, session)
+def delete_user(
+    user_id: int,
+    session: Session = Depends(get_session),
+    current_user=Depends(get_current_user),
+):
+    return delete_user_controller(user_id, session, current_user)
