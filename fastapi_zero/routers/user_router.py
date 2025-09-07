@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -29,17 +30,21 @@ from fastapi_zero.security import get_current_user
 
 router = APIRouter(prefix='/users', tags=['Users'])
 
+SessionDep = Annotated[Session, Depends(get_session)]
+LimitDep = Annotated[int, Query(ge=1, le=100)]
+OffsetDep = Annotated[int, Query(ge=0)]
+
 
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=UserPublic)
-def create_user(user: UserSchema, session: Session = Depends(get_session)):
+def create_user(user: UserSchema, session: SessionDep):
     return create_user_controller(user, session)
 
 
 @router.get('/', status_code=HTTPStatus.OK, response_model=UserList)
 def get_users(
-    session: Session = Depends(get_session),
-    limit: int = Query(10, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    session: SessionDep,
+    limit: LimitDep = 10,
+    offset: OffsetDep = 0,
     current_user=Depends(get_current_user),
 ):
     return get_users_controller(session, limit, offset)
@@ -51,7 +56,7 @@ def get_users(
 def update_user(
     user_id: int,
     user: UserSchema,
-    session: Session = Depends(get_session),
+    session: SessionDep,
     current_user=Depends(get_current_user),
 ):
     return update_user_controller(user_id, user, session, current_user)
@@ -60,7 +65,7 @@ def update_user(
 @router.get(
     '/{user_id}/', status_code=HTTPStatus.OK, response_model=UserPublic
 )
-def get_user(user_id: int, session: Session = Depends(get_session)):
+def get_user(user_id: int, session: SessionDep):
     return get_user_controller(user_id, session)
 
 
@@ -69,7 +74,7 @@ def get_user(user_id: int, session: Session = Depends(get_session)):
 )
 def delete_user(
     user_id: int,
-    session: Session = Depends(get_session),
+    session: SessionDep,
     current_user=Depends(get_current_user),
 ):
     return delete_user_controller(user_id, session, current_user)
