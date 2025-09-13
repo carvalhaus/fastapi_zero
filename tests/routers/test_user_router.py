@@ -134,13 +134,13 @@ def test_get_user(client, user):
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
-        'id': 1,
-        'username': 'Teste',
-        'email': 'teste@teste.com',
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
     }
 
 
-def test_get_user_not_found(client, user):
+def test_get_user_not_found(client):
     response = client.get('/users/99999')
 
     assert response.status_code == HTTPStatus.NOT_FOUND
