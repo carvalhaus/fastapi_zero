@@ -29,3 +29,9 @@ async def login(form_data: OAuth2PasswordRequestForm, session: AsyncSession):
     access_token = create_access_token({'sub': user.email})
 
     return {'access_token': access_token, 'token_type': 'Bearer'}
+
+
+async def refresh_token(user):
+    new_access_token = create_access_token(data={'sub': user.email})
+
+    return {'access_token': new_access_token, 'token_type': 'Bearer'}
